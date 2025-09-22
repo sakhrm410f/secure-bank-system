@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block title %}إدارة المستخدمين - البنك الآمن{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-users"></i> إدارة المستخدمين</h2>
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> العودة للوحة التحكم
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Search and Filters -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="GET" class="row g-3">
+                    <div class="col-md-8">
+                        <input type="text" class="form-control" name="search" 
+                               placeholder="البحث بالاسم، البريد الإلكتروني، أو اسم المستخدم..." 
+                               value="{{ search }}">
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i> بحث
+                        </button>
+                        <a href="{{ url_for('admin.users') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> إلغاء
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Users Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-list"></i> قائمة المستخدمين ({{ users.total }} مستخدم)</h5>
+            </div>
+            <div class="card-body">
+                {% if users.items %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>المعرف</th>
+                                <th>اسم المستخدم</th>
+                                <th>الاسم الكامل</th>
+                                <th>البريد الإلكتروني</th>
+                                <th>الدور</th>
+                                <th>الحالة</th>
+                                <th>تاريخ التسجيل</th>
+                                <th>آخر دخول</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users.items %}
+                            <tr class="{{ 'table-warning' if user.is_account_locked() else '' }}">
+                                <td>{{ user.id }}</td>
+                                <td>
+                                    <strong>{{ user.username }}</strong>
+                                    {% if user.is_account_locked() %}
+                                    <br><span class="badge bg-danger">مقفل</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ user.full_name }}</td>
+                                <td>{{ user.email }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'danger' if user.role == 'admin' else 'primary' }}">
+                                        {{ 'مدير' if user.role == 'admin' else 'مستخدم' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if user.is_active else 'secondary' }}">
+                                        {{ 'نشط' if user.is_active else 'غير نشط' }}
+                                    </span>
+                                </td>
+                                <td class="text-muted small">
+                                    {{ user.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                </td>
+                                <td class="text-muted small">
+                                    {{ user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else 'لم يدخل بعد' }}
+                                </td>
+                                <td>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <a href="{{ url_for('admin.user_details', user_id=user.id) }}" 
+                                           class="btn btn-sm btn-primary" title="عرض تفاصيل المستخدم">
+                                            <i class="fas fa-user-edit"></i> عرض التفاصيل
+                                        </a>
+                                        {% if user.role != 'admin' %}
+                                        <a href="{{ url_for('admin.user_details', user_id=user.id) }}#accounts" 
+                                           class="btn btn-sm btn-success" 
+                                           title="إضافة رصيد"
+                                           onclick="handleAddBalance(event, '{{ user.id }}'); return false;">
+                                            <i class="fas fa-plus-circle"></i> إضافة رصيد
+                                        </a>
+                                        <button type="button" 
+                                                class="btn btn-sm {% if user.is_active %}btn-danger{% else %}btn-success{% endif %}" 
+                                                onclick="toggleUserStatus('{{ user.id }}', '{{ user.username }}')" 
+                                                title="{% if user.is_active %}تعطيل{% else %}تفعيل{% endif %}">
+                                            <i class="fas {% if user.is_active %}fa-ban{% else %}fa-check{% endif %}"></i>
+                                            {% if user.is_active %}تعطيل{% else %}تفعيل{% endif %}
+                                        </button>
+                                        {% endif %}
+                                        {% if user.is_account_locked() %}
+                                        <button type="button" 
+                                                class="btn btn-sm btn-warning" 
+                                                onclick="unlockUser('{{ user.id }}', '{{ user.username }}')" 
+                                                title="إلغاء القفل">
+                                            <i class="fas fa-unlock"></i> فتح القفل
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if users.pages > 1 %}
+                <nav aria-label="صفحات المستخدمين">
+                    <ul class="pagination justify-content-center">
+                        {% if users.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.users', page=users.prev_num, search=search) }}">السابق</a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for page_num in users.iter_pages() %}
+                        {% if page_num %}
+                        {% if page_num != users.page %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.users', page=page_num, search=search) }}">{{ page_num }}</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                        {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                        {% endfor %}
+                        
+                        {% if users.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.users', page=users.next_num, search=search) }}">التالي</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                    <h5>لا توجد مستخدمين</h5>
+                    <p class="text-muted">لم يتم العثور على مستخدمين مطابقين لمعايير البحث</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Function to handle add balance button click
+    function handleAddBalance(event, userId) {
+        event.preventDefault();
+        // Store the target URL in session storage
+        sessionStorage.setItem('showAddBalance', 'true');
+        // Navigate to the user details page
+        window.location.href = event.target.href;
+    }
+    function toggleUserStatus(userId, username) {
+        if (confirm(`هل أنت متأكد من تغيير حالة المستخدم "${username}"؟`)) {
+            const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+            const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+            fetch(`/admin/users/${userId}/toggle_status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
+                credentials: 'same-origin'
+            }).then(response => {
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    alert('حدث خطأ أثناء تغيير حالة المستخدم');
+                }
+            }).catch(error => {
+                alert('حدث خطأ في الاتصال');
+            });
+        }
+    }
+    
+    function unlockUser(userId, username) {
+        if (confirm(`هل أنت متأكد من إلغاء قفل حساب المستخدم "${username}"؟`)) {
+            const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+            const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+            fetch(`/admin/users/${userId}/unlock`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
+                credentials: 'same-origin'
+            }).then(response => {
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    alert('حدث خطأ أثناء إلغاء قفل الحساب');
+                }
+            }).catch(error => {
+                alert('حدث خطأ في الاتصال');
+            });
+        }
+    }
+</script>
+{% endblock %}

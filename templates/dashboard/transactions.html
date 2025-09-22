@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}المعاملات - البنك الآمن{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-list"></i> سجل المعاملات</h2>
+            <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> العودة للوحة التحكم
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-history"></i> جميع المعاملات</h5>
+            </div>
+            <div class="card-body">
+                {% if transactions.items %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>رقم المعاملة</th>
+                                <th>النوع</th>
+                                <th>المبلغ</th>
+                                <th>من الحساب</th>
+                                <th>إلى الحساب</th>
+                                <th>الوصف</th>
+                                <th>التاريخ والوقت</th>
+                                <th>عنوان IP</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in transactions.items %}
+                            <tr>
+                                <td class="font-monospace">#{{ transaction.id }}</td>
+                                <td>
+                                    {% if transaction.transaction_type == 'transfer' %}
+                                        <span class="badge bg-primary">تحويل</span>
+                                    {% elif transaction.transaction_type == 'deposit' %}
+                                        <span class="badge bg-success">إيداع</span>
+                                    {% elif transaction.transaction_type == 'withdrawal' %}
+                                        <span class="badge bg-warning">سحب</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ transaction.transaction_type }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="fw-bold text-{{ 'success' if transaction.to_account_id else 'danger' }}">
+                                    ${{ "%.2f"|format(transaction.amount) }}
+                                </td>
+                                <td>
+                                    {% if transaction.from_account %}
+                                        <span class="font-monospace">{{ transaction.from_account.account_number }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if transaction.to_account %}
+                                        <span class="font-monospace">{{ transaction.to_account.account_number }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="text-truncate d-inline-block" style="max-width: 200px;" title="{{ transaction.description or '-' }}">
+                                        {{ transaction.description or '-' }}
+                                    </span>
+                                </td>
+                                <td class="text-muted small">
+                                    {{ transaction.created_at.strftime('%Y-%m-%d') }}<br>
+                                    <small>{{ transaction.created_at.strftime('%H:%M:%S') }}</small>
+                                </td>
+                                <td class="font-monospace small text-muted">
+                                    {{ transaction.ip_address or '-' }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if transactions.pages > 1 %}
+                <nav aria-label="صفحات المعاملات" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if transactions.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('dashboard.transactions', page=transactions.prev_num) }}">
+                                    <i class="fas fa-chevron-right"></i> السابق
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for page_num in transactions.iter_pages() %}
+                            {% if page_num %}
+                                {% if page_num != transactions.page %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('dashboard.transactions', page=page_num) }}">{{ page_num }}</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                {% endif %}
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if transactions.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('dashboard.transactions', page=transactions.next_num) }}">
+                                    التالي <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-receipt fa-3x text-muted mb-3"></i>
+                    <h5>لا توجد معاملات</h5>
+                    <p class="text-muted">لم تقم بأي معاملات مالية بعد</p>
+                    <a href="{{ url_for('dashboard.transfer') }}" class="btn btn-primary">
+                        <i class="fas fa-exchange-alt"></i> إجراء تحويل جديد
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transaction Statistics -->
+{% if transactions.items %}
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card bg-light">
+            <div class="card-body text-center">
+                <h6 class="card-title">إجمالي المعاملات</h6>
+                <h4 class="text-primary">{{ transactions.total }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-light">
+            <div class="card-body text-center">
+                <h6 class="card-title">الصفحة الحالية</h6>
+                <h4 class="text-info">{{ transactions.page }} من {{ transactions.pages }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-light">
+            <div class="card-body text-center">
+                <h6 class="card-title">معاملات هذه الصفحة</h6>
+                <h4 class="text-success">{{ transactions.items|length }}</h4>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

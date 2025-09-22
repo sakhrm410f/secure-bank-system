@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}مراقبة الأمان - البنك الآمن{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-shield-alt"></i> مراقبة الأمان</h2>
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> العودة للوحة التحكم
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Security Alerts -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5><i class="fas fa-exclamation-triangle"></i> محاولات دخول فاشلة</h5>
+            </div>
+            <div class="card-body text-center">
+                <h2 class="text-danger">{{ failed_logins|length }}</h2>
+                <p>محاولات دخول فاشلة حديثة</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h5><i class="fas fa-lock"></i> حسابات مقفلة</h5>
+            </div>
+            <div class="card-body text-center">
+                <h2 class="text-warning">{{ locked_accounts|length }}</h2>
+                <p>حسابات مقفلة حالياً</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h5><i class="fas fa-globe"></i> IP مشبوهة</h5>
+            </div>
+            <div class="card-body text-center">
+                <h2 class="text-info">{{ suspicious_ips|length }}</h2>
+                <p>عناوين IP مشبوهة</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Suspicious IPs -->
+{% if suspicious_ips %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h5><i class="fas fa-globe"></i> عناوين IP المشبوهة (آخر 24 ساعة)</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>IP Address</th>
+                                <th>عدد المحاولات الفاشلة</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ip_data in suspicious_ips %}
+                            <tr class="table-warning">
+                                <td class="font-monospace">{{ ip_data.ip_address }}</td>
+                                <td>
+                                    <span class="badge bg-danger">{{ ip_data.attempt_count }}</span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="blockIP('{{ ip_data.ip_address }}')">
+                                        <i class="fas fa-ban"></i> حظر IP
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Locked Accounts -->
+{% if locked_accounts %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5><i class="fas fa-lock"></i> الحسابات المقفلة</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>المستخدم</th>
+                                <th>البريد الإلكتروني</th>
+                                <th>محاولات فاشلة</th>
+                                <th>مقفل حتى</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in locked_accounts %}
+                            <tr class="table-danger">
+                                <td>
+                                    <strong>{{ user.full_name }}</strong><br>
+                                    <small class="text-muted">{{ user.username }}</small>
+                                </td>
+                                <td>{{ user.email }}</td>
+                                <td>
+                                    <span class="badge bg-danger">{{ user.failed_login_attempts }}</span>
+                                </td>
+                                <td class="text-muted small">
+                                    {{ user.account_locked_until.strftime('%Y-%m-%d %H:%M') }}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('admin.user_details', user_id=user.id) }}" class="btn btn-sm btn-outline-info">
+                                        <i class="fas fa-eye"></i> عرض
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-warning" onclick="unlockUser({{ user.id }}, '{{ user.username }}')">
+                                        <i class="fas fa-unlock"></i> إلغاء القفل
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Failed Login Attempts -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-history"></i> آخر محاولات الدخول الفاشلة ({{ failed_logins|length }})</h5>
+            </div>
+            <div class="card-body">
+                {% if failed_logins %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>اسم المستخدم</th>
+                                <th>IP Address</th>
+                                <th>User Agent</th>
+                                <th>التاريخ</th>
+                                <th>الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for attempt in failed_logins %}
+                            <tr class="table-danger">
+                                <td>{{ attempt.username or 'غير محدد' }}</td>
+                                <td class="font-monospace">{{ attempt.ip_address }}</td>
+                                <td class="small text-truncate" style="max-width: 200px;" title="{{ attempt.user_agent }}">
+                                    {{ attempt.user_agent or '-' }}
+                                </td>
+                                <td class="text-muted small">{{ attempt.attempted_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                <td>
+                                    <span class="badge bg-danger">فشل</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-shield-alt fa-3x text-success mb-3"></i>
+                    <h5 class="text-success">لا توجد محاولات دخول فاشلة</h5>
+                    <p class="text-muted">النظام آمن حالياً</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function unlockUser(userId, username) {
+        if (confirm(`هل أنت متأكد من إلغاء قفل حساب المستخدم "${username}"؟`)) {
+            fetch(`/admin/users/${userId}/unlock`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            }).then(response => {
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    alert('حدث خطأ أثناء إلغاء قفل الحساب');
+                }
+            }).catch(error => {
+                alert('حدث خطأ في الاتصال');
+            });
+        }
+    }
+    
+    function blockIP(ipAddress) {
+        alert(`ميزة حظر IP "${ipAddress}" ستكون متاحة في التحديث القادم`);
+    }
+    
+    // Auto-refresh every 30 seconds for real-time monitoring
+    setTimeout(function() {
+        location.reload();
+    }, 30000);
+</script>
+{% endblock %}

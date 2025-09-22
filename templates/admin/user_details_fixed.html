@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}تفاصيل المستخدم - البنك الآمن{% endblock %}
+
+{% block content %}
+<!-- Toast Container -->
+<div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <!-- Toasts will be added here dynamically -->
+</div>
+
+<!-- Original content from user_details.html -->
+{{ self.content() }}
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+//<![CDATA[
+    // JavaScript code here
+//]]>
+</script>
+{% endblock %}

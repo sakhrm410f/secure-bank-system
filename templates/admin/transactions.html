@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}عرض المعاملات - البنك الآمن{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-exchange-alt"></i> عرض المعاملات</h2>
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> العودة للوحة التحكم
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Search and Filters -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="GET" class="row g-3">
+                    <div class="col-md-8">
+                        <input type="text" class="form-control" name="search" 
+                               placeholder="البحث بالوصف أو اسم المستخدم..." 
+                               value="{{ search }}">
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i> بحث
+                        </button>
+                        <a href="{{ url_for('admin.transactions') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> إلغاء
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transactions Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-list"></i> قائمة المعاملات ({{ transactions.total }} معاملة)</h5>
+            </div>
+            <div class="card-body">
+                {% if transactions.items %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>المعرف</th>
+                                <th>النوع</th>
+                                <th>المبلغ</th>
+                                <th>من حساب</th>
+                                <th>إلى حساب</th>
+                                <th>المستخدم</th>
+                                <th>الوصف</th>
+                                <th>التاريخ</th>
+                                <th>IP Address</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in transactions.items %}
+                            <tr>
+                                <td>{{ transaction.id }}</td>
+                                <td>
+                                    <span class="badge bg-primary">{{ transaction.transaction_type }}</span>
+                                </td>
+                                <td class="fw-bold text-success">${{ "%.2f"|format(transaction.amount) }}</td>
+                                <td class="font-monospace small">
+                                    {% if transaction.from_account %}
+                                    {{ transaction.from_account.account_number }}<br>
+                                    <small class="text-muted">{{ transaction.from_account.owner.username }}</small>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="font-monospace small">
+                                    {% if transaction.to_account %}
+                                    {{ transaction.to_account.account_number }}<br>
+                                    <small class="text-muted">{{ transaction.to_account.owner.username }}</small>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <strong>{{ transaction.user.full_name }}</strong><br>
+                                    <small class="text-muted">{{ transaction.user.username }}</small>
+                                </td>
+                                <td>
+                                    <span class="text-truncate d-inline-block" style="max-width: 150px;" title="{{ transaction.description or '-' }}">
+                                        {{ transaction.description or '-' }}
+                                    </span>
+                                </td>
+                                <td class="text-muted small">{{ transaction.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                <td class="font-monospace small">{{ transaction.ip_address or '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if transactions.pages > 1 %}
+                <nav aria-label="صفحات المعاملات">
+                    <ul class="pagination justify-content-center">
+                        {% if transactions.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.transactions', page=transactions.prev_num, search=search) }}">السابق</a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for page_num in transactions.iter_pages() %}
+                        {% if page_num %}
+                        {% if page_num != transactions.page %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.transactions', page=page_num, search=search) }}">{{ page_num }}</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                        {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                        {% endfor %}
+                        
+                        {% if transactions.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.transactions', page=transactions.next_num, search=search) }}">التالي</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-exchange-alt fa-3x text-muted mb-3"></i>
+                    <h5>لا توجد معاملات</h5>
+                    <p class="text-muted">لم يتم العثور على معاملات مطابقة لمعايير البحث</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

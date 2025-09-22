@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}التقارير - البنك الآمن{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-chart-bar"></i> التقارير والإحصائيات</h2>
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> العودة للوحة التحكم
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- User Registration Trends -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-user-plus"></i> اتجاهات تسجيل المستخدمين (آخر 30 يوم)</h5>
+            </div>
+            <div class="card-body">
+                {% if daily_registrations %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>التاريخ</th>
+                                <th>عدد التسجيلات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for reg in daily_registrations %}
+                            <tr>
+                                <td>{{ reg.date }}</td>
+                                <td>
+                                    <span class="badge bg-primary">{{ reg.count }}</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center">لا توجد بيانات تسجيل في آخر 30 يوم</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transaction Volume Trends -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-exchange-alt"></i> اتجاهات حجم المعاملات (آخر 30 يوم)</h5>
+            </div>
+            <div class="card-body">
+                {% if daily_transactions %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>التاريخ</th>
+                                <th>عدد المعاملات</th>
+                                <th>إجمالي المبلغ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for trans in daily_transactions %}
+                            <tr>
+                                <td>{{ trans.date }}</td>
+                                <td>
+                                    <span class="badge bg-info">{{ trans.count }}</span>
+                                </td>
+                                <td class="fw-bold text-success">
+                                    ${{ "%.2f"|format(trans.total_amount or 0) }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center">لا توجد معاملات في آخر 30 يوم</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Account Type Distribution -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-pie"></i> توزيع أنواع الحسابات</h5>
+            </div>
+            <div class="card-body">
+                {% if account_types %}
+                <div class="row">
+                    {% for acc_type in account_types %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card bg-{{ 'primary' if acc_type.account_type == 'checking' else 'success' }} text-white">
+                            <div class="card-body text-center">
+                                <h3>{{ acc_type.count }}</h3>
+                                <p class="mb-0">
+                                    {{ 'حسابات جارية' if acc_type.account_type == 'checking' else 'حسابات توفير' }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted text-center">لا توجد حسابات في النظام</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row mt-3">
+    <div class="col-12 text-center">
+        <button class="btn btn-outline-success px-4" onclick="printReport()">
+            <i class="fas fa-print"></i> طباعة التقرير
+        </button>
+    </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Add chart functionality here if needed
+    console.log('Reports page loaded');
+
+    function printReport() {
+        window.print();
+    }
+
+    // Basic print styles for cleaner output
+    (function addPrintStyles() {
+        const css = `
+            @media print {
+                nav, .btn, .card .card-header a, .navbar, footer { display: none !important; }
+                .card { box-shadow: none !important; border: 1px solid #ccc !important; }
+                body { background: #fff !important; }
+            }
+        `;
+        const style = document.createElement('style');
+        style.type = 'text/css';
+        style.appendChild(document.createTextNode(css));
+        document.head.appendChild(style);
+    })();
+</script>
+{% endblock %}

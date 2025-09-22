@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+
+{% block title %}تفاصيل الحساب - البنك الآمن{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-university"></i> تفاصيل الحساب</h2>
+            <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> العودة للوحة التحكم
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Account Information -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5><i class="fas fa-info-circle"></i> معلومات الحساب</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <td><strong>رقم الحساب:</strong></td>
+                        <td class="font-monospace">{{ account.account_number }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>نوع الحساب:</strong></td>
+                        <td>
+                            <span class="badge bg-{{ 'primary' if account.account_type == 'checking' else 'success' }}">
+                                {{ 'حساب جاري' if account.account_type == 'checking' else 'حساب توفير' }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>الرصيد الحالي:</strong></td>
+                        <td class="fw-bold text-success fs-4">${{ "%.2f"|format(account.balance) }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>تاريخ الإنشاء:</strong></td>
+                        <td>{{ account.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>حالة الحساب:</strong></td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if account.is_active else 'danger' }}">
+                                {{ 'نشط' if account.is_active else 'غير نشط' }}
+                            </span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5><i class="fas fa-chart-bar"></i> إحصائيات سريعة</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-3">
+                        <div class="border-end">
+                            <h4 class="text-primary">{{ transactions|length }}</h4>
+                            <small class="text-muted">إجمالي المعاملات</small>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <h4 class="text-success">
+                            {{ transactions|selectattr("to_account_id", "equalto", account.id)|list|length }}
+                        </h4>
+                        <small class="text-muted">معاملات واردة</small>
+                    </div>
+                    <div class="col-6">
+                        <div class="border-end">
+                            <h4 class="text-warning">
+                                {{ transactions|selectattr("from_account_id", "equalto", account.id)|list|length }}
+                            </h4>
+                            <small class="text-muted">معاملات صادرة</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-info">
+                            {% set seven_days_ago = (now - timedelta(days=7)) %}
+                            {% set recent_count = transactions|selectattr("created_at", "gt", seven_days_ago)|list|length %}
+                            {{ recent_count if recent_count else 0 }}
+                        </h4>
+                        <small class="text-muted">آخر 7 أيام</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-bolt"></i> إجراءات سريعة</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('dashboard.transfer') }}" class="btn btn-primary w-100">
+                            <i class="fas fa-paper-plane"></i> تحويل من هذا الحساب
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-outline-info w-100" onclick="copyAccountNumber(this)">
+                            <i class="fas fa-copy"></i> نسخ رقم الحساب
+                        </button>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('dashboard.transactions') }}" class="btn btn-outline-secondary w-100">
+                            <i class="fas fa-list"></i> جميع المعاملات
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-outline-success w-100" onclick="printAccountDetails()">
+                            <i class="fas fa-print"></i> طباعة التفاصيل
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Transactions -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-history"></i> آخر المعاملات على هذا الحساب</h5>
+                {% if transactions|length > 10 %}
+                <a href="{{ url_for('dashboard.transactions') }}" class="btn btn-sm btn-outline-primary">
+                    عرض الكل
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if transactions %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>النوع</th>
+                                <th>المبلغ</th>
+                                <th>الطرف الآخر</th>
+                                <th>الوصف</th>
+                                <th>التاريخ</th>
+                                <th>الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in transactions[:10] %}
+                            <tr>
+                                <td>
+                                    {% if transaction.from_account_id == account.id %}
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-arrow-up"></i> صادر
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-arrow-down"></i> وارد
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="fw-bold text-{{ 'danger' if transaction.from_account_id == account.id else 'success' }}">
+                                    {{ '-' if transaction.from_account_id == account.id else '+' }}${{ "%.2f"|format(transaction.amount) }}
+                                </td>
+                                <td class="font-monospace">
+                                    {% if transaction.from_account_id == account.id %}
+                                        {% if transaction.to_account %}
+                                            {{ transaction.to_account.account_number }}
+                                        {% else %}
+                                            <span class="text-muted">غير محدد</span>
+                                        {% endif %}
+                                    {% else %}
+                                        {% if transaction.from_account %}
+                                            {{ transaction.from_account.account_number }}
+                                        {% else %}
+                                            <span class="text-muted">غير محدد</span>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="text-truncate d-inline-block" style="max-width: 150px;" title="{{ transaction.description or '-' }}">
+                                        {{ transaction.description or '-' }}
+                                    </span>
+                                </td>
+                                <td class="text-muted small">
+                                    {{ transaction.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                </td>
+                                <td>
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check"></i> مكتملة
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-receipt fa-3x text-muted mb-3"></i>
+                    <h5>لا توجد معاملات</h5>
+                    <p class="text-muted">لم يتم إجراء أي معاملات على هذا الحساب بعد</p>
+                    <a href="{{ url_for('dashboard.transfer') }}" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i> إجراء تحويل جديد
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function copyAccountNumber(btnEl) {
+        const accountNumber = '{{ account.account_number }}';
+        const doSuccessUI = (btn) => {
+            if (!btn) return;
+            const originalText = btn.innerHTML;
+            btn.dataset.originalText = originalText;
+            btn.innerHTML = '<i class="fas fa-check"></i> تم النسخ!';
+            btn.classList.remove('btn-outline-info');
+            btn.classList.add('btn-success');
+            setTimeout(() => {
+                btn.innerHTML = btn.dataset.originalText || originalText;
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-outline-info');
+            }, 2000);
+        };
+
+        const fallbackCopy = (text) => {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.setAttribute('readonly', '');
+            ta.style.position = 'absolute';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                const ok = document.execCommand('copy');
+                document.body.removeChild(ta);
+                return ok;
+            } catch (e) {
+                document.body.removeChild(ta);
+                return false;
+            }
+        };
+
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(accountNumber)
+                .then(() => doSuccessUI(btnEl))
+                .catch(() => {
+                    const ok = fallbackCopy(accountNumber);
+                    if (ok) {
+                        doSuccessUI(btnEl);
+                    } else {
+                        alert('فشل في نسخ رقم الحساب');
+                    }
+                });
+        } else {
+            const ok = fallbackCopy(accountNumber);
+            if (ok) {
+                doSuccessUI(btnEl);
+            } else {
+                alert('فشل في نسخ رقم الحساب');
+            }
+        }
+    }
+    
+    function printAccountDetails() {
+        window.print();
+    }
+    
+    // Print styles
+    const printStyles = `
+        @media print {
+            .btn, .card-header, nav { display: none !important; }
+            .card { border: none !important; box-shadow: none !important; }
+            body { font-size: 12px; }
+        }
+    `;
+    
+    const styleSheet = document.createElement('style');
+    styleSheet.textContent = printStyles;
+    document.head.appendChild(styleSheet);
+</script>
+{% endblock %}

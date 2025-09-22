@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}إنشاء حساب - البنك الآمن{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-header text-center bg-success text-white">
+                <h4><i class="fas fa-user-plus"></i> إنشاء حساب جديد</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('auth.register') }}" id="registerForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="username" class="form-label">اسم المستخدم *</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                <input type="text" class="form-control" id="username" name="username" 
+                                       required maxlength="80" pattern="[a-zA-Z0-9_]+" 
+                                       title="أحرف وأرقام فقط" autocomplete="username">
+                            </div>
+                            <div class="form-text">3 أحرف على الأقل، أحرف وأرقام فقط</div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">البريد الإلكتروني *</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       required maxlength="120" autocomplete="email">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="full_name" class="form-label">الاسم الكامل *</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-id-card"></i></span>
+                            <input type="text" class="form-control" id="full_name" name="full_name" 
+                                   required maxlength="100" autocomplete="name">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">رقم الهاتف</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                            <input type="tel" class="form-control" id="phone" name="phone" 
+                                   maxlength="20" autocomplete="tel">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="password" class="form-label">كلمة المرور *</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                <input type="password" class="form-control" id="password" name="password" 
+                                       required minlength="8" autocomplete="new-password">
+                            </div>
+                            <div class="form-text">
+                                <div id="password-strength" class="small"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="confirm_password" class="form-label">تأكيد كلمة المرور *</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                <input type="password" class="form-control" id="confirm_password" name="confirm_password" 
+                                       required minlength="8" autocomplete="new-password">
+                            </div>
+                            <div id="password-match" class="form-text"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info small">
+                        <h6><i class="fas fa-key"></i> متطلبات كلمة المرور:</h6>
+                        <ul class="mb-0">
+                            <li>8 أحرف على الأقل</li>
+                            <li>حرف كبير واحد على الأقل</li>
+                            <li>حرف صغير واحد على الأقل</li>
+                            <li>رقم واحد على الأقل</li>
+                            <li>رمز خاص واحد على الأقل (!@#$%^&*)</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success" id="submitBtn">
+                            <i class="fas fa-user-plus"></i> إنشاء الحساب
+                        </button>
+                    </div>
+                </form>
+                
+                <hr>
+                <div class="text-center">
+                    <p class="mb-0">لديك حساب بالفعل؟</p>
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-link">
+                        تسجيل الدخول
+                    </a>
+                </div>
+            </div>
+            
+            <div class="card-footer text-center text-muted small">
+                <i class="fas fa-shield-alt text-success"></i>
+                بياناتك محمية بأعلى معايير الأمان
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Password strength checker
+    function checkPasswordStrength(password) {
+        let strength = 0;
+        let feedback = [];
+        
+        if (password.length >= 8) strength++;
+        else feedback.push('8 أحرف على الأقل');
+        
+        if (/[A-Z]/.test(password)) strength++;
+        else feedback.push('حرف كبير');
+        
+        if (/[a-z]/.test(password)) strength++;
+        else feedback.push('حرف صغير');
+        
+        if (/\d/.test(password)) strength++;
+        else feedback.push('رقم');
+        
+        if (/[!@#$%^&*]/.test(password)) strength++;
+        else feedback.push('رمز خاص');
+        
+        return { strength, feedback };
+    }
+    
+    // Real-time password validation
+    document.getElementById('password').addEventListener('input', function() {
+        const password = this.value;
+        const result = checkPasswordStrength(password);
+        const strengthDiv = document.getElementById('password-strength');
+        
+        let color = 'text-danger';
+        let text = 'ضعيفة';
+        
+        if (result.strength >= 5) {
+            color = 'text-success';
+            text = 'قوية جداً';
+        } else if (result.strength >= 4) {
+            color = 'text-warning';
+            text = 'قوية';
+        } else if (result.strength >= 3) {
+            color = 'text-info';
+            text = 'متوسطة';
+        }
+        
+        strengthDiv.innerHTML = `<span class="${color}">قوة كلمة المرور: ${text}</span>`;
+        if (result.feedback.length > 0) {
+            strengthDiv.innerHTML += `<br><span class="text-muted">مطلوب: ${result.feedback.join(', ')}</span>`;
+        }
+    });
+    
+    // Password match checker
+    function checkPasswordMatch() {
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirm_password').value;
+        const matchDiv = document.getElementById('password-match');
+        
+        if (confirmPassword) {
+            if (password === confirmPassword) {
+                matchDiv.innerHTML = '<span class="text-success">كلمات المرور متطابقة</span>';
+            } else {
+                matchDiv.innerHTML = '<span class="text-danger">كلمات المرور غير متطابقة</span>';
+            }
+        } else {
+            matchDiv.innerHTML = '';
+        }
+    }
+    
+    document.getElementById('confirm_password').addEventListener('input', checkPasswordMatch);
+    document.getElementById('password').addEventListener('input', checkPasswordMatch);
+    
+    // Form validation
+    document.getElementById('registerForm').addEventListener('submit', function(e) {
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirm_password').value;
+        const username = document.getElementById('username').value.trim();
+        
+        // Check password match
+        if (password !== confirmPassword) {
+            e.preventDefault();
+            alert('كلمات المرور غير متطابقة');
+            return false;
+        }
+        
+        // Check password strength
+        const result = checkPasswordStrength(password);
+        if (result.strength < 5) {
+            e.preventDefault();
+            alert('كلمة المرور لا تلبي جميع المتطلبات');
+            return false;
+        }
+        
+        // Check username format
+        if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+            e.preventDefault();
+            alert('اسم المستخدم يجب أن يحتوي على أحرف وأرقام فقط');
+            return false;
+        }
+    });
+</script>
+{% endblock %}

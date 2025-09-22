@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}إدارة الحسابات - البنك الآمن{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-university"></i> إدارة الحسابات</h2>
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> العودة للوحة التحكم
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Search and Filters -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="GET" class="row g-3">
+                    <div class="col-md-8">
+                        <input type="text" class="form-control" name="search" 
+                               placeholder="البحث برقم الحساب أو اسم المستخدم..." 
+                               value="{{ search }}">
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i> بحث
+                        </button>
+                        <a href="{{ url_for('admin.accounts') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> إلغاء
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Accounts Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-list"></i> قائمة الحسابات ({{ accounts.total }} حساب)</h5>
+            </div>
+            <div class="card-body">
+                {% if accounts.items %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>المعرف</th>
+                                <th>رقم الحساب</th>
+                                <th>المالك</th>
+                                <th>نوع الحساب</th>
+                                <th>الرصيد</th>
+                                <th>الحالة</th>
+                                <th>تاريخ الإنشاء</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for account in accounts.items %}
+                            <tr>
+                                <td>{{ account.id }}</td>
+                                <td class="font-monospace">{{ account.account_number }}</td>
+                                <td>
+                                    <strong>{{ account.owner.full_name }}</strong><br>
+                                    <small class="text-muted">{{ account.owner.username }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'primary' if account.account_type == 'checking' else 'success' }}">
+                                        {{ 'حساب جاري' if account.account_type == 'checking' else 'حساب توفير' }}
+                                    </span>
+                                </td>
+                                <td class="fw-bold text-success">${{ "%.2f"|format(account.balance) }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if account.is_active else 'danger' }}">
+                                        {{ 'نشط' if account.is_active else 'غير نشط' }}
+                                    </span>
+                                </td>
+                                <td class="text-muted small">
+                                    {{ account.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ url_for('dashboard.account_details', account_id=account.id) }}" 
+                                           class="btn btn-sm btn-outline-info" title="عرض التفاصيل">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-{{ 'danger' if account.is_active else 'success' }}" 
+                                                onclick="toggleAccountStatus({{ account.id }}, '{{ account.account_number }}')" 
+                                                title="{{ 'تعطيل' if account.is_active else 'تفعيل' }}">
+                                            <i class="fas fa-{{ 'ban' if account.is_active else 'check' }}"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if accounts.pages > 1 %}
+                <nav aria-label="صفحات الحسابات">
+                    <ul class="pagination justify-content-center">
+                        {% if accounts.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.accounts', page=accounts.prev_num, search=search) }}">السابق</a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for page_num in accounts.iter_pages() %}
+                        {% if page_num %}
+                        {% if page_num != accounts.page %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.accounts', page=page_num, search=search) }}">{{ page_num }}</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                        {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                        {% endfor %}
+                        
+                        {% if accounts.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.accounts', page=accounts.next_num, search=search) }}">التالي</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-university fa-3x text-muted mb-3"></i>
+                    <h5>لا توجد حسابات</h5>
+                    <p class="text-muted">لم يتم العثور على حسابات مطابقة لمعايير البحث</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function toggleAccountStatus(accountId, accountNumber) {
+        if (confirm(`هل أنت متأكد من تغيير حالة الحساب "${accountNumber}"؟`)) {
+            const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+            const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+            fetch(`/admin/accounts/${accountId}/toggle_status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
+                credentials: 'same-origin'
+            }).then(response => {
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    alert('حدث خطأ أثناء تغيير حالة الحساب');
+                }
+            }).catch(error => {
+                alert('حدث خطأ في الاتصال');
+            });
+        }
+    }
+</script>
+{% endblock %}

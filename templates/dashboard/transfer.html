@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+
+{% block title %}تحويل الأموال - البنك الآمن{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4><i class="fas fa-exchange-alt"></i> تحويل الأموال</h4>
+            </div>
+            <div class="card-body">
+                {% if accounts %}
+                <form method="POST" action="{{ url_for('dashboard.transfer') }}" id="transferForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="from_account_id" class="form-label">من الحساب *</label>
+                            <select class="form-select" id="from_account_id" name="from_account_id" required>
+                                <option value="">اختر الحساب المرسل</option>
+                                {% for account in accounts %}
+                                <option value="{{ account.id }}" data-balance="{{ account.balance }}">
+                                    {{ account.account_number }} - {{ 'جاري' if account.account_type == 'checking' else 'توفير' }} 
+                                    (الرصيد: ${{ "%.2f"|format(account.balance) }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="to_account_number" class="form-label">إلى رقم الحساب *</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-university"></i></span>
+                                <input type="text" class="form-control font-monospace" id="to_account_number" 
+                                       name="to_account_number" required maxlength="10" pattern="\d{10}"
+                                       title="رقم الحساب يجب أن يكون 10 أرقام">
+                            </div>
+                            <div class="form-text">أدخل رقم الحساب المكون من 10 أرقام</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="amount" class="form-label">المبلغ *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="amount" name="amount" 
+                                       required min="0.01" max="1000000" step="0.01">
+                            </div>
+                            <div class="form-text">الحد الأقصى: $1,000,000 لكل معاملة</div>
+                            <div id="balance-check" class="form-text"></div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="description" class="form-label">الوصف (اختياري)</label>
+                            <input type="text" class="form-control" id="description" name="description" 
+                                   maxlength="255" placeholder="وصف المعاملة">
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-exclamation-triangle"></i> تنبيه مهم</h6>
+                        <ul class="mb-0">
+                            <li>تأكد من صحة رقم الحساب المستقبل</li>
+                            <li>لا يمكن التراجع عن المعاملة بعد تنفيذها</li>
+                            <li>سيتم تسجيل جميع تفاصيل المعاملة لأغراض الأمان</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('dashboard.index') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> إلغاء
+                        </a>
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <i class="fas fa-paper-plane"></i> تنفيذ التحويل
+                        </button>
+                    </div>
+                </form>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-university fa-3x text-muted mb-3"></i>
+                    <h5>لا توجد حسابات</h5>
+                    <p class="text-muted">تحتاج إلى حساب واحد على الأقل لتتمكن من التحويل</p>
+                    <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> إنشاء حساب جديد
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Security Notice -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6><i class="fas fa-shield-alt"></i> معلومات الأمان</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <i class="fas fa-lock fa-2x text-success mb-2"></i>
+                        <div class="small">تشفير SSL</div>
+                    </div>
+                    <div class="col-md-3">
+                        <i class="fas fa-shield-alt fa-2x text-primary mb-2"></i>
+                        <div class="small">حماية CSRF</div>
+                    </div>
+                    <div class="col-md-3">
+                        <i class="fas fa-history fa-2x text-info mb-2"></i>
+                        <div class="small">تتبع المعاملات</div>
+                    </div>
+                    <div class="col-md-3">
+                        <i class="fas fa-user-shield fa-2x text-warning mb-2"></i>
+                        <div class="small">مصادقة آمنة</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Real-time balance checking
+    function checkBalance() {
+        const fromAccountSelect = document.getElementById('from_account_id');
+        const amountInput = document.getElementById('amount');
+        const balanceCheckDiv = document.getElementById('balance-check');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        if (fromAccountSelect.value && amountInput.value) {
+            const selectedOption = fromAccountSelect.options[fromAccountSelect.selectedIndex];
+            const balance = parseFloat(selectedOption.dataset.balance);
+            const amount = parseFloat(amountInput.value);
+            
+            if (amount > balance) {
+                balanceCheckDiv.innerHTML = '<span class="text-danger">الرصيد غير كافي</span>';
+                submitBtn.disabled = true;
+            } else {
+                balanceCheckDiv.innerHTML = '<span class="text-success">الرصيد كافي</span>';
+                submitBtn.disabled = false;
+            }
+        } else {
+            balanceCheckDiv.innerHTML = '';
+            submitBtn.disabled = false;
+        }
+    }
+    
+    document.getElementById('from_account_id').addEventListener('change', checkBalance);
+    document.getElementById('amount').addEventListener('input', checkBalance);
+    
+    // Account number validation
+    document.getElementById('to_account_number').addEventListener('input', function() {
+        this.value = this.value.replace(/\D/g, ''); // Only digits
+        if (this.value.length > 10) {
+            this.value = this.value.slice(0, 10);
+        }
+    });
+    
+    // Form validation
+    document.getElementById('transferForm').addEventListener('submit', function(e) {
+        const fromAccount = document.getElementById('from_account_id').value;
+        const toAccount = document.getElementById('to_account_number').value;
+        const amount = parseFloat(document.getElementById('amount').value);
+        
+        // Basic validation
+        if (!fromAccount || !toAccount || !amount) {
+            e.preventDefault();
+            alert('يرجى ملء جميع الحقول المطلوبة');
+            return false;
+        }
+        
+        // Account number format validation
+        if (!/^\d{10}$/.test(toAccount)) {
+            e.preventDefault();
+            alert('رقم الحساب يجب أن يكون 10 أرقام');
+            return false;
+        }
+        
+        // Amount validation
+        if (amount <= 0 || amount > 1000000) {
+            e.preventDefault();
+            alert('المبلغ يجب أن يكون بين 0.01 و 1,000,000');
+            return false;
+        }
+        
+        // Balance check
+        const fromAccountSelect = document.getElementById('from_account_id');
+        const selectedOption = fromAccountSelect.options[fromAccountSelect.selectedIndex];
+        const balance = parseFloat(selectedOption.dataset.balance);
+        
+        if (amount > balance) {
+            e.preventDefault();
+            alert('الرصيد غير كافي لإتمام المعاملة');
+            return false;
+        }
+        
+        // Confirmation
+        if (!confirm(`هل أنت متأكد من تحويل $${amount.toFixed(2)} إلى الحساب ${toAccount}؟`)) {
+            e.preventDefault();
+            return false;
+        }
+        
+        // Disable submit button to prevent double submission
+        document.getElementById('submitBtn').disabled = true;
+        document.getElementById('submitBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحويل...';
+    });
+</script>
+{% endblock %}

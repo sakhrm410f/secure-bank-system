@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}تم تجاوز الحد المسموح - البنك الآمن{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 text-center">
+        <div class="card">
+            <div class="card-body py-5">
+                <i class="fas fa-clock fa-5x text-warning mb-4"></i>
+                <h1 class="display-4 text-muted">429</h1>
+                <h4>تم تجاوز الحد المسموح</h4>
+                <p class="text-muted mb-4">
+                    لقد تجاوزت الحد المسموح من الطلبات. يرجى الانتظار قليلاً قبل المحاولة مرة أخرى.
+                </p>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    هذا الإجراء الأمني يحمي النظام من الاستخدام المفرط والهجمات الآلية.
+                </div>
+                <div class="d-grid gap-2 d-md-block">
+                    <a href="{{ url_for('index') }}" class="btn btn-primary">
+                        <i class="fas fa-home"></i> الصفحة الرئيسية
+                    </a>
+                    <button onclick="setTimeout(() => location.reload(), 60000)" class="btn btn-outline-secondary">
+                        <i class="fas fa-refresh"></i> إعادة المحاولة خلال دقيقة
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

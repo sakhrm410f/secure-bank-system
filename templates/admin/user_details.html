@@ -1,0 +1,541 @@
+{% extends "base.html" %}
+
+{% block title %}تفاصيل المستخدم - البنك الآمن{% endblock %}
+
+{% block content %}
+<!-- Toast Container -->
+<div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <!-- Toasts will be added here dynamically -->
+</div>
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-user"></i> تفاصيل المستخدم: {{ user.full_name }}</h2>
+            <a href="{{ url_for('admin.users') }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> العودة لقائمة المستخدمين
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- User Information -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5><i class="fas fa-info-circle"></i> معلومات المستخدم</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <td><strong>المعرف:</strong></td>
+                        <td>{{ user.id }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>اسم المستخدم:</strong></td>
+                        <td class="font-monospace">{{ user.username }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>الاسم الكامل:</strong></td>
+                        <td>{{ user.full_name }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>البريد الإلكتروني:</strong></td>
+                        <td>{{ user.email }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>رقم الهاتف:</strong></td>
+                        <td>{{ user.phone or 'غير محدد' }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>الدور:</strong></td>
+                        <td>
+                            <span class="badge bg-{{ 'danger' if user.role == 'admin' else 'primary' }}">
+                                {{ 'مدير' if user.role == 'admin' else 'مستخدم' }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>الحالة:</strong></td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if user.is_active else 'secondary' }}">
+                                {{ 'نشط' if user.is_active else 'غير نشط' }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>تاريخ التسجيل:</strong></td>
+                        <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>آخر دخول:</strong></td>
+                        <td>{{ user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else 'لم يدخل بعد' }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5><i class="fas fa-shield-alt"></i> معلومات الأمان</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <td><strong>محاولات الدخول الفاشلة:</strong></td>
+                        <td>
+                            <span class="badge bg-{{ 'danger' if user.failed_login_attempts >= 3 else 'success' }}">
+                                {{ user.failed_login_attempts }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>حالة القفل:</strong></td>
+                        <td>
+                            {% if user.is_account_locked() %}
+                            <span class="badge bg-danger">مقفل حتى {{ user.account_locked_until.strftime('%Y-%m-%d %H:%M') }}</span>
+                            {% else %}
+                            <span class="badge bg-success">غير مقفل</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>عدد الحسابات:</strong></td>
+                        <td><span class="badge bg-info">{{ accounts|length }}</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>عدد المعاملات:</strong></td>
+                        <td><span class="badge bg-secondary">{{ transactions|length }}</span></td>
+                    </tr>
+                </table>
+                
+                <!-- Admin Actions -->
+                {% if user.username != 'admin' %}
+                <div class="mt-3">
+                    {% if user.is_account_locked() %}
+                    <button type="button" class="btn btn-warning btn-sm" onclick="unlockUser()">
+                        <i class="fas fa-unlock"></i> إلغاء القفل
+                    </button>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- User Accounts -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-university"></i> حسابات المستخدم ({{ accounts|length }})</h5>
+            </div>
+            <div class="card-body">
+                {% if accounts %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>رقم الحساب</th>
+                                <th>نوع الحساب</th>
+                                <th>الرصيد</th>
+                                <th>الحالة</th>
+                                <th>تاريخ الإنشاء</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for account in accounts %}
+                            <tr>
+                                <td class="font-monospace">{{ account.account_number }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'primary' if account.account_type == 'checking' else 'success' }}">
+                                        {{ 'حساب جاري' if account.account_type == 'checking' else 'حساب توفير' }}
+                                    </span>
+                                </td>
+                                <td class="fw-bold text-success">${{ "%.2f"|format(account.balance) }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if account.is_active else 'danger' }}">
+                                        {{ 'نشط' if account.is_active else 'غير نشط' }}
+                                    </span>
+                                </td>
+                                <td class="text-muted small">{{ account.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>
+                                    <span class="text-muted">—</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center">لا يوجد حسابات لهذا المستخدم</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Transactions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-history"></i> آخر المعاملات ({{ transactions|length }})</h5>
+            </div>
+            <div class="card-body">
+                {% if transactions %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>النوع</th>
+                                <th>المبلغ</th>
+                                <th>من حساب</th>
+                                <th>إلى حساب</th>
+                                <th>الوصف</th>
+                                <th>التاريخ</th>
+                                <th>IP Address</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in transactions %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-primary">{{ transaction.transaction_type }}</span>
+                                </td>
+                                <td class="fw-bold text-success">${{ "%.2f"|format(transaction.amount) }}</td>
+                                <td class="font-monospace small">
+                                    {{ transaction.from_account.account_number if transaction.from_account else '-' }}
+                                </td>
+                                <td class="font-monospace small">
+                                    {{ transaction.to_account.account_number if transaction.to_account else '-' }}
+                                </td>
+                                <td>
+                                    <span class="text-truncate d-inline-block" style="max-width: 150px;" title="{{ transaction.description or '-' }}">
+                                        {{ transaction.description or '-' }}
+                                    </span>
+                                </td>
+                                <td class="text-muted small">{{ transaction.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td class="font-monospace small">{{ transaction.ip_address or '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center">لا توجد معاملات لهذا المستخدم</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Login Attempts -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-sign-in-alt"></i> محاولات تسجيل الدخول الأخيرة</h5>
+            </div>
+            <div class="card-body">
+                {% if login_attempts %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>النتيجة</th>
+                                <th>IP Address</th>
+                                <th>User Agent</th>
+                                <th>التاريخ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for attempt in login_attempts %}
+                            <tr class="{{ 'table-danger' if not attempt.success else '' }}">
+                                <td>
+                                    <span class="badge bg-{{ 'success' if attempt.success else 'danger' }}">
+                                        {{ 'نجح' if attempt.success else 'فشل' }}
+                                    </span>
+                                </td>
+                                <td class="font-monospace">{{ attempt.ip_address }}</td>
+                                <td class="small text-truncate" style="max-width: 200px;" title="{{ attempt.user_agent }}">
+                                    {{ attempt.user_agent or '-' }}
+                                </td>
+                                <td class="text-muted small">{{ attempt.attempted_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center">لا توجد محاولات دخول مسجلة</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reset Password Modal -->
+<div class="modal fade" id="resetPasswordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">إعادة تعيين كلمة المرور</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('admin.reset_user_password', user_id=user.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        سيتم إعادة تعيين كلمة مرور المستخدم <strong>{{ user.username }}</strong> وإلغاء قفل الحساب إن وجد.
+                    </div>
+                    <div class="mb-3">
+                        <label for="new_password" class="form-label">كلمة المرور الجديدة</label>
+                        <input type="password" class="form-control" id="new_password" name="new_password" 
+                               required minlength="8" placeholder="أدخل كلمة مرور قوية">
+                        <div class="form-text">يجب أن تحتوي على 8 أحرف على الأقل، حروف كبيرة وصغيرة، أرقام ورموز خاصة</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-danger">إعادة تعيين كلمة المرور</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!-- Add Balance Modal -->
+<div class="modal fade" id="addBalanceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">إضافة رصيد لحساب <span id="accountNumberSpan"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="addBalanceForm" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" id="accountId" name="account_id" value="">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">المبلغ</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="amount" name="amount" 
+                                   min="0.01" step="0.01" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">السبب</label>
+                        <input type="text" class="form-control" id="description" name="description" 
+                               maxlength="255" required>
+                        <div class="form-text">مثال: إيداع نقدي، تسوية حسابية، إلخ.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">تأكيد الإيداع</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.toast {
+    min-width: 300px;
+    margin-bottom: 0.5rem;
+}
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+//<![CDATA[
+    // Check if we need to show the add balance modal
+    document.addEventListener('DOMContentLoaded', function() {
+        if (sessionStorage.getItem('showAddBalance') === 'true') {
+            // Clear the flag immediately to prevent showing the modal again on refresh
+            sessionStorage.removeItem('showAddBalance');
+            
+            // Wait for the page to fully load and then some more for Bootstrap to initialize
+            setTimeout(function() {
+                // Find the first account's add balance button
+                const addBalanceBtn = document.querySelector('.add-balance-btn');
+                if (addBalanceBtn) {
+                    // Get the account details from data attributes
+                    const accountId = addBalanceBtn.getAttribute('data-account-id');
+                    const accountNumber = addBalanceBtn.getAttribute('data-account-number');
+                    
+                    // Show the modal directly
+                    try {
+                        showAddBalanceModal(accountId, accountNumber);
+                    } catch (e) {
+                        console.error('Failed to open modal:', e);
+                    }
+                }
+            }, 800); // Increased delay to ensure everything is loaded
+        }
+    });
+
+    // Ensure CSRF token is present on reset password form submit
+    (function ensureResetFormCsrf() {
+        const form = document.querySelector('#resetPasswordModal form');
+        if (!form) return;
+        form.addEventListener('submit', function(e){
+            let tokenInput = form.querySelector('input[name="csrf_token"]');
+            if (!tokenInput) {
+                const meta = document.querySelector('meta[name="csrf-token"]');
+                const token = meta ? meta.getAttribute('content') : '';
+                if (!token) return; // allow server to decide
+                tokenInput = document.createElement('input');
+                tokenInput.type = 'hidden';
+                tokenInput.name = 'csrf_token';
+                tokenInput.value = token;
+                form.appendChild(tokenInput);
+            }
+        });
+    })();
+    function toggleUserStatus() {
+        if (confirm('هل أنت متأكد من تغيير حالة هذا المستخدم؟')) {
+            const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+            const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+            fetch(`/admin/users/{{ user.id }}/toggle_status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
+                credentials: 'same-origin'
+            }).then(response => {
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    alert('حدث خطأ أثناء تغيير حالة المستخدم');
+                }
+            }).catch(error => {
+                alert('حدث خطأ في الاتصال');
+            });
+        }
+    }
+    
+    // Show add balance modal with account info
+    function showAddBalanceModal(accountId, accountNumber) {
+        document.getElementById('accountId').value = accountId;
+        document.getElementById('accountNumberSpan').textContent = accountNumber;
+        if (typeof bootstrap === 'undefined' || !bootstrap.Modal) {
+            alert('تعذر فتح النافذة المنبثقة (Bootstrap غير محمل).');
+            return;
+        }
+        const modal = new bootstrap.Modal(document.getElementById('addBalanceModal'));
+        modal.show();
+    }
+
+    // Handle add balance form submission
+    document.getElementById('addBalanceForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const accountId = formData.get('account_id');
+        
+        // Show loading state
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> جاري المعالجة...';
+    
+    // Send request
+    fetch(`/admin/user/{{ user.id }}/add_balance`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': formData.get('csrf_token')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            showToast('success', 'تمت العملية بنجاح', data.message);
+            // Close modal (guard if bootstrap available)
+            if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addBalanceModal'));
+                if (modal) modal.hide();
+            }
+            // Reload page after 1.5 seconds to see the changes
+            setTimeout(() => window.location.reload(), 1500);
+        } else {
+            throw new Error(data.message || 'حدث خطأ غير معروف');
+        }
+    })
+    .catch(error => {
+        showToast('error', 'خطأ', error.message || 'فشل في إضافة الرصيد');
+    })
+    .finally(() => {
+        // Reset button state
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    });
+});
+
+// Show toast notification
+function showToast(type, title, message) {
+    const toastContainer = document.getElementById('toastContainer');
+    const toastId = 'toast-' + Date.now();
+    const toastHtml = `
+        <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <strong>${title}</strong><br>${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    `;
+    
+    if (typeof bootstrap === 'undefined' || !bootstrap.Toast) {
+        // Fallback to alert if Bootstrap not available
+        alert(`${title}: ${message}`);
+        return;
+    }
+    toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+    const toastElement = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastElement, {delay: 5000});
+    toast.show();
+    // Remove toast after it hides
+    toastElement.addEventListener('hidden.bs.toast', function() {
+        toastElement.remove();
+    });
+}
+
+    function unlockUser() {
+        if (confirm('هل أنت متأكد من إلغاء قفل هذا الحساب؟')) {
+            const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+            const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+            fetch(`/admin/users/{{ user.id }}/unlock`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
+                credentials: 'same-origin'
+            }).then(response => {
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    alert('حدث خطأ أثناء إلغاء قفل الحساب');
+                }
+            }).catch(error => {
+                alert('حدث خطأ في الاتصال');
+            });
+        }
+    }
+//]]>
+</script>
+{% endblock %}

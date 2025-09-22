@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}لوحة التحكم - البنك الآمن{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2><i class="fas fa-tachometer-alt"></i> لوحة التحكم</h2>
+            <p class="text-muted">مرحباً {{ current_user.full_name }}، آخر دخول: {{ current_user.last_login.strftime('%Y-%m-%d %H:%M') if current_user.last_login else 'أول مرة' }}</p>
+        </div>
+    </div>
+
+    <!-- Account Summary -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">إجمالي الرصيد</h6>
+                            <h3>${{ "%.2f"|format(total_balance) }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-wallet fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">عدد الحسابات</h6>
+                            <h3>{{ accounts|length }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-university fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">آخر المعاملات</h6>
+                            <h3>{{ recent_transactions|length }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-exchange-alt fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Accounts Section -->
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-university"></i> حساباتي</h5>
+                </div>
+                <div class="card-body">
+                    {% if accounts %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>رقم الحساب</th>
+                                        <th>نوع الحساب</th>
+                                        <th>الرصيد</th>
+                                        <th>تاريخ الإنشاء</th>
+                                        <th>الإجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for account in accounts %}
+                                    <tr>
+                                        <td>
+                                            <span class="font-monospace">{{ account.account_number }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ 'primary' if account.account_type == 'checking' else 'success' }}">
+                                                {{ 'جاري' if account.account_type == 'checking' else 'توفير' }}
+                                            </span>
+                                        </td>
+                                        <td class="fw-bold">${{ "%.2f"|format(account.balance) }}</td>
+                                        <td>{{ account.created_at.strftime('%Y-%m-%d') }}</td>
+                                        <td>
+                                            <a href="{{ url_for('dashboard.account_details', account_id=account.id) }}" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i> عرض
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-university fa-3x text-muted mb-3"></i>
+                            <h5>لا توجد حسابات</h5>
+                            <p class="text-muted">ابدأ بإنشاء حساب جديد</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-bolt"></i> إجراءات سريعة</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('dashboard.transfer') }}" class="btn btn-primary">
+                            <i class="fas fa-exchange-alt"></i> تحويل أموال
+                        </a>
+                        <a href="{{ url_for('dashboard.transactions') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-list"></i> عرض المعاملات
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Security Status -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6><i class="fas fa-shield-alt"></i> حالة الأمان</h6>
+                </div>
+                <div class="card-body">
+                    <div class="small">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>تشفير البيانات</span>
+                            <span class="text-success"><i class="fas fa-check"></i> نشط</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>حماية CSRF</span>
+                            <span class="text-success"><i class="fas fa-check"></i> نشط</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>جلسة آمنة</span>
+                            <span class="text-success"><i class="fas fa-check"></i> نشط</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>IP الحالي</span>
+                            <span class="text-muted font-monospace small">{{ request.remote_addr }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+        </div>
+    </div>
+
+<!-- Create Account Modal -->
+<div class="modal fade" id="createAccountModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-plus"></i> إنشاء حساب جديد</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('dashboard.create_account') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="account_type" class="form-label">نوع الحساب</label>
+                        <select class="form-select" id="account_type" name="account_type" required>
+                            <option value="">اختر نوع الحساب</option>
+                            <option value="checking">حساب جاري</option>
+                            <option value="savings">حساب توفير</option>
+                        </select>
+                    </div>
+                    <div class="alert alert-info small">
+                        <i class="fas fa-info-circle"></i>
+                        سيتم إنشاء رقم حساب فريد تلقائياً مع رصيد ابتدائي صفر
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">إنشاء الحساب</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}سجلات النظام - البنك الآمن{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-file-alt"></i> سجلات النظام</h2>
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> العودة للوحة التحكم
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- System Logs -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-list"></i> محاولات تسجيل الدخول ({{ login_attempts.total }} محاولة)</h5>
+                <button class="btn btn-sm btn-outline-secondary" onclick="location.reload()">
+                    <i class="fas fa-sync"></i> تحديث
+                </button>
+            </div>
+            <div class="card-body">
+                {% if login_attempts.items %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>المعرف</th>
+                                <th>اسم المستخدم</th>
+                                <th>IP Address</th>
+                                <th>النتيجة</th>
+                                <th>User Agent</th>
+                                <th>التاريخ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for attempt in login_attempts.items %}
+                            <tr class="{{ 'table-danger' if not attempt.success else 'table-success' }}">
+                                <td>{{ attempt.id }}</td>
+                                <td>{{ attempt.username or 'غير محدد' }}</td>
+                                <td class="font-monospace">{{ attempt.ip_address }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if attempt.success else 'danger' }}">
+                                        <i class="fas fa-{{ 'check' if attempt.success else 'times' }}"></i>
+                                        {{ 'نجح' if attempt.success else 'فشل' }}
+                                    </span>
+                                </td>
+                                <td class="small text-truncate" style="max-width: 300px;" title="{{ attempt.user_agent }}">
+                                    {{ attempt.user_agent or '-' }}
+                                </td>
+                                <td class="text-muted small">{{ attempt.attempted_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if login_attempts.pages > 1 %}
+                <nav aria-label="صفحات السجلات">
+                    <ul class="pagination justify-content-center">
+                        {% if login_attempts.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.system_logs', page=login_attempts.prev_num) }}">السابق</a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for page_num in login_attempts.iter_pages() %}
+                        {% if page_num %}
+                        {% if page_num != login_attempts.page %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.system_logs', page=page_num) }}">{{ page_num }}</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                        {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                        {% endfor %}
+                        
+                        {% if login_attempts.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.system_logs', page=login_attempts.next_num) }}">التالي</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                    <h5>لا توجد سجلات</h5>
+                    <p class="text-muted">لم يتم تسجيل أي محاولات دخول بعد</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Auto-refresh every 30 seconds for real-time monitoring
+    setTimeout(function() {
+        location.reload();
+    }, 30000);
+</script>
+{% endblock %}

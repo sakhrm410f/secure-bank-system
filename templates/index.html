@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}البنك الآمن - الصفحة الرئيسية{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section py-5 mb-5" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%); color: white; position: relative; overflow: hidden; min-height: 70vh;">
+    <div class="hero-pattern"></div>
+    <div class="container position-relative">
+        <div class="row justify-content-center text-center">
+            <div class="col-lg-8">
+                <div class="hero-content py-5">
+                    <h1 class="display-3 fw-bold mb-4" style="text-shadow: 0 2px 4px rgba(0,0,0,0.3);">
+                        <i class="fas fa-university" style="color: var(--accent-gold); margin-left: 1rem;"></i>
+                        مرحباً بك
+                    </h1>
+                    <p class="lead mb-4 fs-4">نظام بنكي آمن ومتطور</p>
+                    <p class="mb-5 fs-5" style="opacity: 0.9;">ابدأ رحلتك المصرفية الآمنة معنا</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h2 class="display-5 fw-bold mb-4" style="color: var(--primary-blue);">لماذا البنك الآمن؟</h2>
+        <p class="lead" style="color: var(--neutral-gray);">نقدم لك أفضل الخدمات المصرفية مع أعلى مستويات الأمان</p>
+    </div>
+
+    <!-- First Row -->
+    <div class="row row-cols-3 g-4 mb-4">
+        <div class="col">
+            <div class="card h-100 border-0 shadow-sm" style="border-radius: 50px;">
+                <div class="card-body d-flex align-items-center p-2">
+                    <div class="feature-icon me-2" style="width: 45px; height: 45px; background: linear-gradient(135deg, var(--success-green), #10b981); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative; overflow: hidden;">
+                        <i class="fas fa-shield-alt text-white"></i>
+                    </div>
+                    <div>
+                        <h5 class="card-title fw-bold mb-2" style="color: var(--primary-blue);">أمان متقدم</h5>
+                        <p class="card-text mb-0" style="color: var(--neutral-gray);">حماية من الهجمات الإلكترونية مع تشفير قوي</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col">
+            <div class="card h-100 border-0 shadow-sm" style="border-radius: 50px;">
+                <div class="card-body d-flex align-items-center p-2">
+                    <div class="feature-icon me-2" style="width: 45px; height: 45px; background: linear-gradient(135deg, var(--secondary-blue), var(--primary-blue)); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative; overflow: hidden;">
+                        <i class="fas fa-exchange-alt text-white"></i>
+                    </div>
+                    <div>
+                        <h5 class="card-title fw-bold mb-2" style="color: var(--primary-blue);">تحويلات آمنة</h5>
+                        <p class="card-text mb-0" style="color: var(--neutral-gray);">تحويل الأموال مع تتبع كامل وحماية من الاحتيال</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col">
+            <div class="card h-100 border-0 shadow-sm" style="border-radius: 50px;">
+                <div class="card-body d-flex align-items-center p-2">
+                    <div class="feature-icon me-2" style="width: 45px; height: 45px; background: linear-gradient(135deg, var(--accent-gold), var(--warning-orange)); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative; overflow: hidden;">
+                        <i class="fas fa-user-lock text-white"></i>
+                    </div>
+                    <div>
+                        <h5 class="card-title fw-bold mb-2" style="color: var(--primary-blue);">مصادقة قوية</h5>
+                        <p class="card-text mb-0" style="color: var(--neutral-gray);">نظام مصادقة متعدد المستويات مع حماية قوية</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Second Row -->
+    <div class="row row-cols-3 g-4">
+        <div class="col">
+            <div class="card h-100 border-0 shadow-sm" style="border-radius: 40px;">
+                <div class="card-body d-flex align-items-center p-2">
+                    <div class="feature-icon me-2" style="width: 45px; height: 45px; background: linear-gradient(135deg, var(--danger-red), #ef4444); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative; overflow: hidden;">
+                        <i class="fas fa-history text-white"></i>
+                    </div>
+                    <div>
+                        <h5 class="card-title fw-bold mb-2" style="color: var(--primary-blue);">تتبع المعاملات</h5>
+                        <p class="card-text mb-0" style="color: var(--neutral-gray);">سجل كامل للمعاملات مع تفاصيل الأمان</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col">
+            <div class="card h-100 border-0 shadow-sm" style="border-radius: 50px;">
+                <div class="card-body d-flex align-items-center p-2">
+                    <div class="feature-icon me-2" style="width: 45px; height: 45px; background: linear-gradient(135deg, #8b5cf6, #7c3aed); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative; overflow: hidden;">
+                        <i class="fas fa-clock text-white"></i>
+                    </div>
+                    <div>
+                        <h5 class="card-title fw-bold mb-2" style="color: var(--primary-blue);">خدمة 24/7</h5>
+                        <p class="card-text mb-0" style="color: var(--neutral-gray);">خدمات بنكية متاحة على مدار الساعة</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col">
+            <div class="card h-100 border-0 shadow-sm" style="border-radius: 50px;">
+                <div class="card-body d-flex align-items-center p-2">
+                    <div class="feature-icon me-2" style="width: 45px; height: 45px; background: linear-gradient(135deg, #06b6d4, #0891b2); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative; overflow: hidden;">
+                        <i class="fas fa-mobile-alt text-white"></i>
+                    </div>
+                    <div>
+                        <h5 class="card-title fw-bold mb-2" style="color: var(--primary-blue);">سهولة الاستخدام</h5>
+                        <p class="card-text mb-0" style="color: var(--neutral-gray);">واجهة بسيطة مع تجربة مستخدم متميزة</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}

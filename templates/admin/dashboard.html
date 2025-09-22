@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}لوحة تحكم المدير - البنك الآمن{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-shield-alt text-warning"></i> لوحة تحكم المدير</h2>
+            <div class="badge bg-danger fs-6">صلاحيات إدارية</div>
+</div>
+        </div>
+
+<!-- System Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-users fa-2x mb-2"></i>
+                <h3>{{ total_users }}</h3>
+                <p class="mb-0">إجمالي المستخدمين</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-university fa-2x mb-2"></i>
+                <h3>{{ total_accounts }}</h3>
+                <p class="mb-0">إجمالي الحسابات</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-exchange-alt fa-2x mb-2"></i>
+                <h3>{{ total_transactions }}</h3>
+                <p class="mb-0">إجمالي المعاملات</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card bg-warning text-dark">
+            <div class="card-body text-center">
+                <i class="fas fa-dollar-sign fa-2x mb-2"></i>
+                <h3>${{ "%.2f"|format(total_balance) }}</h3>
+                <p class="mb-0">إجمالي الأرصدة</p>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Security Alerts and System Activity (edge-to-edge within container) -->
+<div class="d-flex align-items-stretch justify-content-between mb-4" style="gap: 1.5rem;">
+    <div class="flex-fill">
+        <div class="card border-danger h-100">
+            <div class="card-header bg-danger text-white">
+                <h5><i class="fas fa-exclamation-triangle"></i> تنبيهات أمنية</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h4 class="text-danger">{{ failed_logins_today }}</h4>
+                        <small>محاولات دخول فاشلة اليوم</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-warning">{{ locked_accounts }}</h4>
+                        <small>حسابات مقفلة</small>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <a href="{{ url_for('admin.security') }}" class="btn btn-outline-danger btn-sm">
+                        <i class="fas fa-shield-alt"></i> عرض التفاصيل الأمنية
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="flex-fill">
+        <div class="card border-success h-100">
+            <div class="card-header bg-success text-white">
+                <h5><i class="fas fa-chart-line"></i> نشاط النظام</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h4 class="text-success">{{ active_users }}</h4>
+                        <small>مستخدمين نشطين</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-info">{{ (active_users / total_users * 100)|round(1) if total_users > 0 else 0 }}%</h4>
+                        <small>معدل النشاط</small>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <a href="{{ url_for('admin.reports') }}" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-chart-bar"></i> عرض التقارير
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-bolt"></i> إجراءات سريعة</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-2 mb-2">
+                        <a href="{{ url_for('admin.users') }}" class="btn btn-primary w-100">
+                            <i class="fas fa-users"></i><br>إدارة المستخدمين
+                        </a>
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <a href="{{ url_for('admin.accounts') }}" class="btn btn-success w-100">
+                            <i class="fas fa-university"></i><br>إدارة الحسابات
+                        </a>
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <a href="{{ url_for('admin.transactions') }}" class="btn btn-info w-100">
+                            <i class="fas fa-exchange-alt"></i><br>عرض المعاملات
+                        </a>
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <a href="{{ url_for('admin.security') }}" class="btn btn-warning w-100">
+                            <i class="fas fa-shield-alt"></i><br>مراقبة الأمان
+                        </a>
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <a href="{{ url_for('admin.reports') }}" class="btn btn-secondary w-100">
+                            <i class="fas fa-chart-bar"></i><br>التقارير
+                        </a>
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <a href="{{ url_for('admin.system_logs') }}" class="btn btn-dark w-100">
+                            <i class="fas fa-file-alt"></i><br>سجلات النظام
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+</div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-user-plus"></i> المستخدمين الجدد</h5>
+                <a href="{{ url_for('admin.users') }}" class="btn btn-sm btn-outline-primary">عرض الكل</a>
+            </div>
+            <div class="card-body">
+                {% if recent_users %}
+                <div class="list-group list-group-flush">
+                    {% for user in recent_users %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ user.full_name }}</strong><br>
+                            <small class="text-muted">{{ user.username }} - {{ user.email }}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-{{ 'success' if user.is_active else 'danger' }}">
+                                {{ 'نشط' if user.is_active else 'غير نشط' }}
+                            </span><br>
+                            <small class="text-muted">{{ user.created_at.strftime('%Y-%m-%d') }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted text-center">لا توجد مستخدمين جدد</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-history"></i> آخر المعاملات</h5>
+                <a href="{{ url_for('admin.transactions') }}" class="btn btn-sm btn-outline-primary">عرض الكل</a>
+            </div>
+            <div class="card-body">
+                {% if recent_transactions and recent_transactions|length > 0 %}
+                    <div class="list-group list-group-flush">
+                        {% for transaction in recent_transactions %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>${{ "%.2f"|format(transaction.amount) }}</strong><br>
+                                <small class="text-muted">{{ transaction.user.username if transaction.user else 'نظام' }}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-primary">{{ transaction.transaction_type }}</span><br>
+                                <small class="text-muted">{{ transaction.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center">لا توجد معاملات حديثة</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Auto-refresh dashboard every 30 seconds
+    setTimeout(function() {
+        location.reload();
+    }, 30000);
+    
+    // Add notification for security alerts
+    {% if failed_logins_today > 10 or locked_accounts > 0 %}
+    document.addEventListener('DOMContentLoaded', function() {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-warning alert-dismissible fade show position-fixed';
+        alertDiv.style.top = '20px';
+        alertDiv.style.right = '20px';
+        alertDiv.style.zIndex = '9999';
+        alertDiv.innerHTML = `
+            <strong>تنبيه أمني!</strong> يوجد نشاط مشبوه في النظام.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alertDiv);
+    });
+    {% endif %}
+</script>
+{% endblock %}
